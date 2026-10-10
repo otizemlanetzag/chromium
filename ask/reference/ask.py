@@ -367,8 +367,7 @@ def run_program(program: str, base_dir: Path | None = None) -> str:
                 candidate = path_match.group(1).strip()
                 candidate = candidate.split(" or ")[0].strip()
                 if candidate and candidate != '""' and not candidate.startswith("text"):
-                    if candidate and not candidate.startswith('text'):
-                        path = _unquote(candidate)
+                    path = _unquote(candidate)
             text_match = re.search(r'text\s*"([\s\S]*?)"', joined)
             if text_match:
                 text = text_match.group(1)
