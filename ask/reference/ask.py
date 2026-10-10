@@ -360,13 +360,13 @@ def run_program(program: str, base_dir: Path | None = None) -> str:
         if line.startswith("connection.send"):
             block, i = _read_multiline(lines, i - 1)
             joined = "\n".join(block)
-            path_match = re.search(r'connection\.send\s*\(\s*([^\\n]+)', joined)
+            path_match = re.search(r'connection\.send\s*\(\s*([^\r\n]+)', joined)
             path = None
             text = None
             if path_match:
                 candidate = path_match.group(1).strip()
-                if candidate not in ('""', "or", "or \\"\\""):
-                    candidate = candidate.split(" or ")[0].strip()
+                candidate = candidate.split(" or ")[0].strip()
+                if candidate and candidate != '""' and not candidate.startswith("text"):
                     if candidate and not candidate.startswith('text'):
                         path = _unquote(candidate)
             text_match = re.search(r'text\s*"([\s\S]*?)"', joined)
