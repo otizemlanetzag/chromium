@@ -1,42 +1,39 @@
 # ASK language
 
-ASK is a statement-oriented scripting language intended to bridge web, desktop, and mobile hosts. This directory contains the initial syntax reference, a Python reference interpreter, tests, and a prototype Chromium extension.
+ASK is a small, statement-oriented language intended for web, desktop, and mobile hosts. This branch contains an early reference implementation and a Chromium extension prototype.
 
-## Syntax compatibility
+## Implemented subset
 
-The first implementation preserves the spellings and shapes supplied in the initial specification, including `check.permisions`, `check.connect`, `check.api`, `connection.send`, and `screen.send`. It does not silently rename them.
+- The Python standard-library interpreter is in `reference/ask.py`; launch it with `python ask.py example.ask`.
+- HTML lookup by element `id` supports `clr`, `all`, `type`, `text`, `id`, and `complete`.
+- The extension runner can inspect the active tab's live DOM and computed background color, report basic device/screen information, and inspect a selected local HTML file in an isolated frame.
+- Both `check.connect(@API)` and `check.api(...)` have initial GET-request handling. The extension asks for access to the endpoint origin; servers may still reject cross-origin requests.
+- `screen.send` displays a dialog with choices and supports a restricted SVG subset. SVG scripts, event handlers, external links, and unknown elements are discarded.
+- `connection.send` can prepare a browser download from text or a file selected through the file picker. It does not silently read arbitrary local paths.
+- `check.permisions` is parsed and shown for user confirmation. It does not grant permissions by itself.
 
-## Current implementation
+## Try the extension
 
-- Python standard-library interpreter: `reference/ask.py` (launcher: `ask.py`).
-- HTML source lookup by `id`, with `return.type=clr|all|type|text|id|complete`.
-- Initial parser for API calls, content sending, dialog choices, and permission declarations.
-- Chromium extension prototype at `hosts/chromium_extension/` that can inspect the active tab's live DOM and computed background color through a popup.
-- Smoke tests in `tests/`, with a GitHub Actions workflow.
+1. Open [the extension folder](https://github.com/otizemlanetzag/chromium/tree/ask-language-foundation/ask/hosts/chromium_extension).
+2. Download the folder to your computer.
+3. Visit `chrome://extensions` or `opera://extensions`, enable Developer mode, and choose **Load unpacked**.
+4. Select `hosts/chromium_extension`.
+5. Open a normal web page, click the ASK extension icon, enter a program, and click **Run ASK**.
 
-The Python interpreter and browser extension are not yet connected automatically. Native messaging or a local authenticated bridge is needed for an ASK script to control the extension directly. Desktop/mobile host adapters and real permission enforcement are also not yet implemented.
+Example for a live page:
 
-## Run the interpreter
-
-Requires Python 3.10+ and only the Python standard library. From this directory:
-
-```powershell
-python ask.py example.ask
+```ask
+check.connect(@chromium)
+html=[active].html
+el={submit-button}
+return.type=clr
+return
 ```
 
-HTML paths are resolved relative to the working directory. The Python interpreter parses HTML source and only supports a limited CSS fallback; use the Chromium extension to inspect a live page and obtain the computed background color.
+Replace `submit-button` with an ID actually present on the page. For a local HTML file, choose it in the HTML source picker and use `html=[file].html`.
 
-## Try the Chromium extension
+## Limitations — important
 
-1. Open `chrome://extensions` or `opera://extensions`.
-2. Enable **Developer mode**.
-3. Click **Load unpacked** and select `hosts/chromium_extension/`.
-4. Open an ordinary HTTP/HTTPS page and click the ASK extension icon.
-5. Enter an element ID, select a return type, and run inspection.
+This is not yet a complete cross-platform runtime. The Python interpreter is not automatically connected to the extension; the extension popup runs the browser subset itself. A native-messaging or similarly authenticated host bridge is still needed for scripts launched from Python to control a browser. Desktop and mobile host adapters are not implemented. Permission declarations do not override browser or operating-system consent. Local-file delivery is represented as a download rather than direct injection into a page. Browser-internal pages may refuse inspection.
 
-## Security model
-
-- API calls can send information to external endpoints. Run only scripts you trust.
-- Do not put live API keys in source files; use environment variables or a secure host secret store.
-- `yes` in `check.permisions` cannot bypass browser or operating-system consent.
-- This prototype does not inject arbitrary HTML into a live page or grant device permissions.
+External API requests can send data to third parties. Only run scripts you trust, and do not embed private API keys in programs that other people can read. Use HTTPS endpoints whenever possible.
