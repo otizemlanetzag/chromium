@@ -2,14 +2,8 @@
   "manifest_version": 3,
   "name": "ASK Chromium Host Adapter",
   "version": "0.1.0",
-  "description": "A minimal Chromium extension adapter for inspecting the active page with ASK-compatible commands.",
-  "permissions": ["activeTab"],
-  "host_permissions": ["http://*/*", "https://*/*"],
+  "description": "Inspect the active page using the initial ASK return types.",
+  "permissions": ["activeTab", "scripting"],
   "background": {"service_worker": "service_worker.js"},
-  "content_scripts": [{
-    "matches": ["http://*/*", "https://*/*"],
-    "js": ["content.js"],
-    "run_at": "document_idle"
-  }],
-  "action": {"default_title": "ASK host adapter"}
+  "action": {"default_title": "ASK", "default_popup": "popup.html"}
 }
