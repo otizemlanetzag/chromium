@@ -257,6 +257,27 @@ def run_program(program: str, base_dir: Path | None = None) -> str:
         if not line or line.startswith("&&") or line.startswith("#"):
             continue
 
+        if line.startswith("check.connect(@API)"):
+            # The API block is parsed separately below; this branch remains
+            # for exact syntax compatibility if indentation varies.
+            block = []
+            while i < len(lines) and (not lines[i].strip() or lines[i][:1].isspace()):
+                block.append(lines[i].strip())
+                i += 1
+            values = {}
+            for entry in block:
+                m = re.match(r"^(endpointurl|key|query)\s*=\s*(.*)$", entry)
+                if m:
+                    values[m.group(1)] = m.group(2)
+            endpoint = _unquote(values.get("endpointurl", ""))
+            key = _unquote(values.get("key", ""))
+            query = values.get("query", "")
+            query = query.replace("path", "").strip()
+            query = _unquote(query.lstrip("+ ").strip())
+            result = rt.call_api(endpoint, key, query)
+            print(result)
+            continue
+
         if line.startswith("check.connect(@"):
             match = re.match(r"check\.connect\(@([A-Za-z0-9_.-]+)\)", line)
             if not match:
@@ -309,27 +330,6 @@ def run_program(program: str, base_dir: Path | None = None) -> str:
                 if not m:
                     raise AskError(f"Invalid permission declaration: {permission_line}")
                 rt.permissions[m.group(1)] = m.group(2)
-            continue
-
-        if line.startswith("check.connect(@API)"):
-            # The API block is parsed separately below; this branch remains
-            # for exact syntax compatibility if indentation varies.
-            block = []
-            while i < len(lines) and (not lines[i].strip() or lines[i][:1].isspace()):
-                block.append(lines[i].strip())
-                i += 1
-            values = {}
-            for entry in block:
-                m = re.match(r"^(endpointurl|key|query)\s*=\s*(.*)$", entry)
-                if m:
-                    values[m.group(1)] = m.group(2)
-            endpoint = _unquote(values.get("endpointurl", ""))
-            key = _unquote(values.get("key", ""))
-            query = values.get("query", "")
-            query = query.replace("path", "").strip()
-            query = _unquote(query.lstrip("+ ").strip())
-            result = rt.call_api(endpoint, key, query)
-            print(result)
             continue
 
         if line.startswith("check.api("):
