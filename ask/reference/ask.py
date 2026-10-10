@@ -82,6 +82,9 @@ class _HTMLReader(html.parser.HTMLParser):
 
 def _unquote(value: str) -> str:
     value = value.strip()
+    # ASK accepts both "value" and ("value") in its examples.
+    if len(value) >= 2 and value[0] == "(" and value[-1] == ")":
+        value = value[1:-1].strip()
     if len(value) >= 2 and value[0] == value[-1] and value[0] in "'\\"":
         return value[1:-1]
     return value
