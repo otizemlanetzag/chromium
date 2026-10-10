@@ -1,37 +1,42 @@
 # ASK language
 
-ASK is a small, statement-oriented scripting language intended to bridge web, desktop, and mobile hosts. This directory contains the initial language specification and a portable Python reference interpreter.
+ASK is a statement-oriented scripting language intended to bridge web, desktop, and mobile hosts. This directory contains the initial syntax reference, a Python reference interpreter, tests, and a prototype Chromium extension.
 
-## Compatibility promise
+## Syntax compatibility
 
-The interpreter keeps the spellings and shapes from the initial ASK examples, including `check.permisions`, `check.connect`, `check.api`, `connection.send`, and `screen.send`. These spellings are part of the language surface and are not silently renamed.
+The first implementation preserves the spellings and shapes supplied in the initial specification, including `check.permisions`, `check.connect`, `check.api`, `connection.send`, and `screen.send`. It does not silently rename them.
 
-## First milestone
+## Current implementation
 
-The reference interpreter currently focuses on the source/element/return flow:
+- Python standard-library interpreter: `reference/ask.py` (launcher: `ask.py`).
+- HTML source lookup by `id`, with `return.type=clr|all|type|text|id|complete`.
+- Initial parser for API calls, content sending, dialog choices, and permission declarations.
+- Chromium extension prototype at `hosts/chromium_extension/` that can inspect the active tab's live DOM and computed background color through a popup.
+- Smoke tests in `tests/`, with a GitHub Actions workflow.
 
-- `check.connect(@chromium)`
-- `check.type={device}` (portable runtime/device information)
-- `html=[path].html`
-- `el={element-id}`
-- `return.type=clr|all|type|text|id|complete`
-- `return`
+The Python interpreter and browser extension are not yet connected automatically. Native messaging or a local authenticated bridge is needed for an ASK script to control the extension directly. Desktop/mobile host adapters and real permission enforcement are also not yet implemented.
 
-It also defines and parses the API and permissions syntax in the language documentation. Browser-computed styles, browser DOM access, native sensor permissions, native dialogs, and delivering content into a real Chromium tab require host adapters; the Python reference interpreter does not pretend to grant those platform capabilities on its own.
+## Run the interpreter
 
-## Run the reference interpreter
-
-Requires Python 3.10+ and only the Python standard library:
+Requires Python 3.10+ and only the Python standard library. From this directory:
 
 ```powershell
 python ask.py example.ask
 ```
 
-Paths in `html=[...].html` are resolved relative to the current working directory. Element lookup uses the HTML `id` attribute. The `clr` return first checks the element's inline `background-color`, then inline `color`, and then simple matching CSS rules in the same HTML file. It reports `NONE` if no color declaration is found; a browser host adapter will be needed for full computed CSS.
+HTML paths are resolved relative to the working directory. The Python interpreter parses HTML source and only supports a limited CSS fallback; use the Chromium extension to inspect a live page and obtain the computed background color.
+
+## Try the Chromium extension
+
+1. Open `chrome://extensions` or `opera://extensions`.
+2. Enable **Developer mode**.
+3. Click **Load unpacked** and select `hosts/chromium_extension/`.
+4. Open an ordinary HTTP/HTTPS page and click the ASK extension icon.
+5. Enter an element ID, select a return type, and run inspection.
 
 ## Security model
 
-- API calls are external network requests and may send data to the configured endpoint. Run only ASK scripts you trust.
-- API keys should be supplied via environment variables or a secure host secret store; do not commit real keys into scripts.
-- `yes` in `check.permisions` is a request to the host policy, not a bypass of operating-system/browser consent.
-- HTML sent to a browser must be treated as untrusted input and rendered in an appropriately isolated context.
+- API calls can send information to external endpoints. Run only scripts you trust.
+- Do not put live API keys in source files; use environment variables or a secure host secret store.
+- `yes` in `check.permisions` cannot bypass browser or operating-system consent.
+- This prototype does not inject arbitrary HTML into a live page or grant device permissions.
