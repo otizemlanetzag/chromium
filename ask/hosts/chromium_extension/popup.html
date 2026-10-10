@@ -19,7 +19,7 @@ pre{white-space:pre-wrap;overflow-wrap:anywhere;max-height:180px;overflow:auto;p
 <body>
 <h1>ASK</h1>
 <p>Run ASK against the active Chromium tab</p>
-<label for="htmlFile">Optional HTML file for html=[file].html</label><input id="htmlFile" type="file" accept=".html,.htm,text/html"><textarea id="source" spellcheck="false">check.connect(@chromium)
+<label for="htmlFile">HTML source for html=[file].html</label><input id="htmlFile" type="file" accept=".html,.htm,text/html"><label for="sendFile">File for connection.send(path/to/file)</label><input id="sendFile" type="file"><textarea id="source" spellcheck="false">check.connect(@chromium)
 check.type={device}
 html=[active].html
 el={submit-button}
