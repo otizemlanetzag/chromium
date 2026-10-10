@@ -52,6 +52,7 @@ class _HTMLReader(html.parser.HTMLParser):
         self.elements.append(element)
         self.stack.append((element, offset))
         if tag.lower() in self.VOID:
+            element.raw = self.get_starttag_text() or ""
             self.stack.pop()
 
     def handle_startendtag(self, tag: str, attrs: list[tuple[str, str | None]]) -> None:
@@ -74,8 +75,9 @@ class _HTMLReader(html.parser.HTMLParser):
                 break
 
     def handle_data(self, data: str) -> None:
-        if self.stack:
-            self.stack[-1][0].text += data
+        # Inner text belongs to the selected element and each ancestor.
+        for element, _start in self.stack:
+            element.text += data
 
 
 def _unquote(value: str) -> str:
@@ -98,7 +100,7 @@ def _simple_css_color(source: str, element: Element) -> str:
         if ":" in part:
             key, value = part.split(":", 1)
             declarations[key.strip().lower()] = value.strip()
-    for key in ("background-color", "background", "color"):
+    for key in ("background-color", "background"):
         if declarations.get(key):
             return declarations[key]
 
@@ -122,7 +124,7 @@ def _simple_css_color(source: str, element: Element) -> str:
                 if ":" in part:
                     k, v = part.split(":", 1)
                     decl[k.strip().lower()] = v.strip()
-            for key in ("background-color", "background", "color"):
+            for key in ("background-color", "background"):
                 if decl.get(key):
                     return decl[key]
     return "NONE"
