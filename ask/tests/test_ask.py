@@ -39,7 +39,10 @@ class AskInterpreterTests(unittest.TestCase):
         self.assertEqual(rt.get_return_value(), source)
 
     def test_permission_syntax_is_accepted(self):
-        program = "check.permisions:\\n  location = ask\\n  acelometer = yes\\n  microphone = no"
+        program = """check.permisions:
+  location = ask
+  acelometer = yes
+  microphone = no"""
         run_program(program)
 
     def test_unknown_element_fails_clearly(self):
