@@ -20,6 +20,8 @@ ASK is a small, statement-oriented language intended for web, desktop, and mobil
 4. Select `hosts/chromium_extension`.
 5. Open a normal web page, click the ASK extension icon, enter a program, and click **Run ASK**.
 
+For a ready-to-extract extension ZIP, open the [ASK reference tests workflow](https://github.com/otizemlanetzag/chromium/actions/workflows/ask-tests.yml), choose a successful run, and download the `ask-chromium-extension` artifact at the bottom of that run.
+
 Example for a live page:
 
 ```ask
