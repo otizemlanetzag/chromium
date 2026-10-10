@@ -1,0 +1,23 @@
+name: ASK reference tests
+
+on:
+  pull_request:
+    paths:
+      - "ask/**"
+      - ".github/workflows/ask-tests.yml"
+  push:
+    branches: [main, ask-language-foundation]
+    paths:
+      - "ask/**"
+      - ".github/workflows/ask-tests.yml"
+
+jobs:
+  reference-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Run ASK smoke tests
+        run: python -m unittest discover -s ask/tests -v
