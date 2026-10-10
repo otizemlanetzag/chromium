@@ -12,6 +12,7 @@ async function inspectActivePage(id,type){
  return r?.[0]?.result;
 }
 async function inspectSourceDocument(source,id,type){
+ if(type==="complete")return source;
  const frame=document.createElement("iframe");frame.setAttribute("sandbox","allow-same-origin");frame.style.display="none";
  const safeSource='<meta http-equiv="Content-Security-Policy" content="default-src \'none\'; img-src data:; style-src \'unsafe-inline\' data:; font-src data:">'+source;
  frame.srcdoc=safeSource;document.body.append(frame);
