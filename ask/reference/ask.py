@@ -305,6 +305,8 @@ def run_program(program: str, base_dir: Path | None = None) -> str:
         if html_match:
             path = _unquote(html_match.group(1))
             candidate = Path(path)
+            if candidate.suffix.lower() not in {".html", ".htm"}:
+                candidate = candidate.with_suffix(".html")
             if not candidate.is_absolute():
                 candidate = base_dir / candidate
             rt.load_html(str(candidate))
