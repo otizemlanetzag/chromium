@@ -19,5 +19,7 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
+      - name: Check extension JavaScript syntax
+        run: node --check ask/hosts/chromium_extension/popup.js && node --check ask/hosts/chromium_extension/content.js && node --check ask/hosts/chromium_extension/service_worker.js
       - name: Run ASK smoke tests
         run: python -m unittest discover -s ask/tests -v
