@@ -1,0 +1,6 @@
+check.connect(@chromium)
+check.type={device}
+html=[example.html].html
+el={submit-button}
+return.type=text
+return
