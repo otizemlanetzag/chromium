@@ -342,7 +342,7 @@ def run_program(
         if not line or line.startswith("&&") or line.startswith("#"):
             continue
 
-        ask_call = re.fullmatch(r"([A-Za-z0-9_./\\-]+\.ask)\s*\((.*)\)", line)
+        ask_call = re.fullmatch(r"([A-Za-z0-9_:.\/\\-]+\.ask)\s*\((.*)\)", line)
         if ask_call:
             called_path = Path(ask_call.group(1)).expanduser()
             if not called_path.is_absolute():
