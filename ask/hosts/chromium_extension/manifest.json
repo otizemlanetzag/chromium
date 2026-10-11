@@ -1,0 +1,10 @@
+{
+  "manifest_version": 3,
+  "name": "ASK Chromium Host Adapter",
+  "version": "0.2.0",
+  "description": "Run a safe initial subset of ASK against the active page or an isolated HTML file.",
+  "permissions": ["activeTab", "scripting"],
+  "optional_host_permissions": ["http://*/*", "https://*/*"],
+  "background": { "service_worker": "service_worker.js" },
+  "action": { "default_title": "ASK", "default_popup": "popup.html" }
+}
