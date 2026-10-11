@@ -12,6 +12,32 @@ ASK is a small, statement-oriented language intended for web, desktop, and mobil
 - `connection.send` can prepare a browser download from text or a file selected through the file picker. It does not silently read arbitrary local paths.
 - `check.permisions` is parsed and shown for user confirmation. It does not grant permissions by itself.
 
+## Parameters and reusable ASK files
+
+An \`.ask\` file can declare named inputs on its first meaningful line with \`startwith(...)\`. Call it with the file path and named values:
+
+\`\`\`ask
+startwith(file.html)
+html=[file.html].html
+el={headline}
+return.type=text
+return
+\`\`\`
+
+Save that as \`inspect.ask\`. Then run it by passing the named argument:
+
+\`\`\`text
+python ask.py "inspect.ask(file.html=example_path/page.html)"
+\`\`\`
+
+The same invocation syntax can be used inside another ASK program:
+
+\`\`\`ask
+inspect.ask(file.html=example_path/page.html)
+\`\`\`
+
+Multiple parameters are comma-separated, for example \`startwith(file.html, element.id)\` and \`inspect.ask(file.html=page.html, element.id=headline)\`. Argument names must match the declaration. Missing, extra, or duplicate arguments produce an error. Parameter values are treated as data, not executable ASK statements.
+
 ## Try the extension
 
 1. Open [the extension folder](https://github.com/otizemlanetzag/chromium/tree/ask-language-foundation/ask/hosts/chromium_extension).
