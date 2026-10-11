@@ -1,0 +1,9 @@
+# inspect.ask
+# Run with:
+# python ask.py "inspect.ask(file.html=example_path/page.html)"
+
+startwith(file.html)
+html=[file.html].html
+el={headline}
+return.type=text
+return
