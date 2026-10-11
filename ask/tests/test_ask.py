@@ -45,6 +45,50 @@ class AskInterpreterTests(unittest.TestCase):
   microphone = no"""
         run_program(program)
 
+
+    def test_startwith_named_html_path_argument(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            Path(root, "page.html").write_text(
+                '<html><body><p id="headline">Hello ASK</p></body></html>',
+                encoding="utf-8",
+            )
+            program = """startwith(file.html)
+html=[file.html].html
+el={headline}
+return.type=text
+return"""
+            output = run_program(
+                program,
+                root,
+                {"file.html": "page.html"},
+            )
+            self.assertEqual(output, "Hello ASK")
+
+    def test_startwith_rejects_missing_argument(self):
+        with self.assertRaisesRegex(AskError, "Missing startwith argument"):
+            run_program("startwith(file.html)\nreturn", Path.cwd(), {})
+
+    def test_named_ask_file_invocation(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            Path(root, "page.html").write_text(
+                '<p id="message">From file</p>', encoding="utf-8"
+            )
+            Path(root, "inspect.ask").write_text(
+                "startwith(file.html)\n"
+                "html=[file.html].html\n"
+                "el={message}\n"
+                "return.type=text\n"
+                "return\n",
+                encoding="utf-8",
+            )
+            output = run_program(
+                "inspect.ask(file.html=page.html)",
+                root,
+            )
+            self.assertEqual(output, "From file")
+
     def test_unknown_element_fails_clearly(self):
         rt = AskRuntime(source_html='<p id="known">Text</p>')
         with self.assertRaises(AskError):
