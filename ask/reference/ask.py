@@ -248,18 +248,110 @@ def _read_multiline(lines: list[str], start: int) -> tuple[list[str], int]:
     raise AskError("Unclosed parenthesized command.")
 
 
-def run_program(program: str, base_dir: Path | None = None) -> str:
+def _split_arguments(source: str) -> list[str]:
+    """Split an ASK argument list, respecting quoted strings."""
+    parts: list[str] = []
+    current: list[str] = []
+    quote: str | None = None
+    for char in source:
+        if quote:
+            current.append(char)
+            if char == quote:
+                quote = None
+        elif char in ("'", '"'):
+            quote = char
+            current.append(char)
+        elif char == ",":
+            parts.append("".join(current).strip())
+            current = []
+        else:
+            current.append(char)
+    if quote:
+        raise AskError("Unclosed quote in ASK argument list.")
+    if current or source.strip():
+        parts.append("".join(current).strip())
+    return parts
+
+
+def _parse_entry(program: str) -> tuple[list[str], str]:
+    """Read an optional startwith(parameter, ...) declaration."""
+    lines = program.splitlines()
+    for index, raw in enumerate(lines):
+        if not raw.strip() or raw.strip().startswith("#") or raw.strip().startswith("&&"):
+            continue
+        match = re.fullmatch(r"startwith\s*\((.*?)\)\s*", raw.strip())
+        if not match:
+            return [], program
+        names = _split_arguments(match.group(1))
+        for name in names:
+            if not re.fullmatch(r"[A-Za-z_][A-Za-z0-9_.-]*", name):
+                raise AskError(f"Invalid startwith parameter name: {name}")
+        del lines[index]
+        return names, "\n".join(lines)
+    return [], program
+
+
+def _parse_call_arguments(source: str) -> dict[str, str]:
+    values: dict[str, str] = {}
+    for item in _split_arguments(source):
+        if "=" not in item:
+            raise AskError("ASK file calls require named arguments, such as file.ask(file.html=example_path/file.html).")
+        name, value = item.split("=", 1)
+        name, value = name.strip(), _unquote(value)
+        if not re.fullmatch(r"[A-Za-z_][A-Za-z0-9_.-]*", name):
+            raise AskError(f"Invalid ASK argument name: {name}")
+        if name in values:
+            raise AskError(f"Duplicate ASK argument: {name}")
+        values[name] = value
+    return values
+
+
+def run_program(
+    program: str,
+    base_dir: Path | None = None,
+    parameters: dict[str, str] | None = None,
+) -> str:
+    base_dir = (base_dir or Path.cwd()).resolve()
+    declared, program = _parse_entry(program)
+    supplied = dict(parameters or {})
+    if declared:
+        missing = [name for name in declared if name not in supplied]
+        extra = [name for name in supplied if name not in declared]
+        if missing:
+            raise AskError("Missing startwith argument(s): " + ", ".join(missing))
+        if extra:
+            raise AskError("Unknown startwith argument(s): " + ", ".join(extra))
+    elif supplied:
+        raise AskError("This ASK file has no startwith(...) declaration.")
+    # Parameter values are inserted as data; they are not evaluated as ASK code.
+    for name in sorted(supplied, key=len, reverse=True):
+        program = re.sub(
+            r"(?<![A-Za-z0-9_.-])" + re.escape(name) + r"(?![A-Za-z0-9_.-])",
+            lambda _match, value=supplied[name]: value,
+            program,
+        )
     rt = AskRuntime()
     lines = program.splitlines()
     i = 0
     result = ""
-    base_dir = base_dir or Path.cwd()
 
     while i < len(lines):
         raw = lines[i]
         line = raw.strip()
         i += 1
         if not line or line.startswith("&&") or line.startswith("#"):
+            continue
+
+        ask_call = re.fullmatch(r"([A-Za-z0-9_./\\-]+\.ask)\s*\((.*)\)", line)
+        if ask_call:
+            called_path = Path(ask_call.group(1)).expanduser()
+            if not called_path.is_absolute():
+                called_path = base_dir / called_path
+            if not called_path.is_file():
+                raise AskError(f"ASK file to run was not found: {called_path}")
+            call_args = _parse_call_arguments(ask_call.group(2))
+            called_source = called_path.read_text(encoding="utf-8")
+            result = run_program(called_source, called_path.resolve().parent, call_args)
             continue
 
         if line.startswith("check.connect(@API)"):
@@ -301,7 +393,7 @@ def run_program(program: str, base_dir: Path | None = None) -> str:
             }
             continue
 
-        html_match = re.match(r"^html=\[(.*?)\]\.html$", line)
+        html_match = re.match(r"^html=\[(.*?)\](?:\.html)?$", line)
         if html_match:
             path = _unquote(html_match.group(1))
             candidate = Path(path)
@@ -402,12 +494,23 @@ def run_program(program: str, base_dir: Path | None = None) -> str:
 
 def main() -> int:
     if len(sys.argv) != 2:
-        print("Usage: python ask.py <program.ask>", file=sys.stderr)
+        print("Usage: python ask.py <program.ask> or python ask.py 'file.ask(name=value)'", file=sys.stderr)
         return 2
-    program_path = Path(sys.argv[1]).expanduser()
+    invocation = sys.argv[1].strip()
+    call_match = re.fullmatch(r"(.+?\.ask)\s*\((.*)\)", invocation)
+    parameters: dict[str, str] = {}
+    if call_match:
+        program_path = Path(call_match.group(1)).expanduser()
+        try:
+            parameters = _parse_call_arguments(call_match.group(2))
+        except AskError as exc:
+            print(f"ASK error: {exc}", file=sys.stderr)
+            return 1
+    else:
+        program_path = Path(invocation).expanduser()
     try:
         program = program_path.read_text(encoding="utf-8")
-        run_program(program, program_path.resolve().parent)
+        run_program(program, program_path.resolve().parent, parameters)
     except (OSError, AskError) as exc:
         print(f"ASK error: {exc}", file=sys.stderr)
         return 1
